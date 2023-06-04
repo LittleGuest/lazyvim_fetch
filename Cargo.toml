@@ -7,5 +7,8 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.1.11", features = ["derive"] }
+futures = "0.3.28"
+log = "0.4.17"
 serde = { version = "1.0.158", features = ["derive"] }
+simple_logger = "4.1.0"
 toml_edit = { version = "0.19.7", features = ["serde"] }
