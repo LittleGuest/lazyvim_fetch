@@ -85,8 +85,10 @@ impl App {
     fn delete(&self) {
         fs::remove_dir_all(NVIM_PATH).unwrap();
         fs::remove_dir_all(PLUGIN_PATH).unwrap();
-        fs::remove_dir_all(CACHE_PATH).unwrap();
-        fs::remove_dir_all(STATE_PATH).unwrap();
+        if cfg!(unix) {
+            fs::remove_dir_all(CACHE_PATH).unwrap();
+            fs::remove_dir_all(STATE_PATH).unwrap();
+        }
     }
 }
 
@@ -101,7 +103,7 @@ impl std::future::Future for NeovimPlugin {
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
+        cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         let Some(name) = self.plugin_name() else {
             log::error!("{} 插件名称为空,跳过下载",self.git_url);
@@ -133,11 +135,13 @@ impl std::future::Future for NeovimPlugin {
                 } else {
                     let stderr = String::from_utf8(output.stderr).unwrap();
                     log::error!("安装插件{name}失败，原因是: {stderr}，稍后重新安装");
+                    cx.waker().clone().wake();
                     Poll::Pending
                 }
             }
             Err(e) => {
                 log::error!("安装插件{name}失败，原因是: {e}，稍后重新安装");
+                cx.waker().clone().wake();
                 Poll::Pending
             }
         }
